@@ -1,0 +1,199 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── DŁUŻNIK ────────────────────────────────────────────────────────────────
+
+model Zgloszenie {
+  id                   String    @id @default(cuid())
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+
+  typNieruchomosci     String    // mieszkanie | dom | dzialka | lokal
+  etapSprawy           String    // bez_komornika | jest_komornik | nie_wiem
+  kwotaZadluzenia      String    // do_50k | 50_200k | 200_500k | powyzej_500k | nie_wiem
+  liczbaWierzycieli    String    // 1 | 2-3 | wiecej
+  typZobowiazan        String[]  // kredyt | zalegloscii | alimenty | inne
+
+  adresNieruchomosci   String?
+  opisSytuacji         String?
+
+  poziomRyzyka         String?   // niski | sredni | wysoki | krytyczny
+  ryzykoScore          Int?
+  ryzykoProcent        Int?
+
+  status               String    @default("nowe")  // nowe | w_toku | zamkniete
+  zaplacono            Boolean   @default(false)
+  stripeSessionId      String?
+  stripePaymentId      String?
+  zaplaconoAt          DateTime?
+
+  email                String?
+  telefon              String?
+
+  notatkiAdmina        String?
+  przypisanyDo         String?
+
+  materialy            ZgloszenieUcesMaterialu[]
+}
+
+model Konsultacja {
+  id           String   @id @default(cuid())
+  createdAt    DateTime @default(now())
+  zgloszenieId String?
+  imieNazwisko String
+  email        String
+  telefon      String
+  preferowany  String
+  opisProblemu String?
+  status       String   @default("oczekuje")  // oczekuje | potwierdzona | odbyta | anulowana
+  notatki      String?
+}
+
+// ─── INWESTOR ───────────────────────────────────────────────────────────────
+
+model Inwestor {
+  id                   String    @id @default(cuid())
+  createdAt            DateTime  @default(now())
+  email                String    @unique
+  passwordHash         String
+  imie                 String
+  nazwisko             String
+  telefon              String?
+  firma                String?
+  nip                  String?
+
+  stripeCustomerId     String?
+  stripeSubscriptionId String?
+  abonamentAktywny     Boolean   @default(false)
+  abonamentDo          DateTime?
+  planAbonamentu       String?   // miesiecznie | rocznie
+
+  aktywny              Boolean   @default(true)
+  zweryfikowany        Boolean   @default(false)
+  rola                 String    @default("inwestor")  // inwestor | vip | admin
+
+  powiadomieniaEmail   Boolean   @default(true)
+  ostatnieLogowanie    DateTime?
+  lockedUntil          DateTime?
+
+  oferty               OfertaFavorite[]
+  sesjePrzegladu       SesjaOferty[]
+}
+
+model Oferta {
+  id                    String    @id @default(cuid())
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  tytul                 String
+  opis                  String
+  typ                   String    // mieszkanie | dom | dzialka | lokal
+  lokalizacja           String
+  wojewodztwo           String
+  powiat                String?
+  gmina                 String?
+  kodPocztowy           String?
+
+  wartoscNieruchomosci  Float
+  kwotaZadluzenia       Float
+  cenaMinimalna         Float
+  potencjalnyZysk       Float?
+
+  etapEgzekucji         String    // bez_komornika | jest_komornik | licytacja | inne
+  typZobowiazan         String[]
+  liczbaWierzycieli     Int
+
+  zdjecia               String[]
+  dokumenty             String[]
+
+  status                String    @default("aktywna")       // aktywna | zarezerwowana | zamknieta | robocza
+  wyrozniiona           Boolean   @default(false)
+  dostepnosc            String    @default("dla_wszystkich") // dla_wszystkich | tylko_vip
+
+  zgloszenieId          String?
+
+  ulubione              OfertaFavorite[]
+  sesje                 SesjaOferty[]
+}
+
+model OfertaFavorite {
+  id         String   @id @default(cuid())
+  inwestorId String
+  ofertaId   String
+  createdAt  DateTime @default(now())
+
+  inwestor   Inwestor @relation(fields: [inwestorId], references: [id])
+  oferta     Oferta   @relation(fields: [ofertaId], references: [id])
+
+  @@unique([inwestorId, ofertaId])
+}
+
+model SesjaOferty {
+  id          String   @id @default(cuid())
+  inwestorId  String
+  ofertaId    String
+  createdAt   DateTime @default(now())
+  czasTrwania Int?
+
+  inwestor    Inwestor @relation(fields: [inwestorId], references: [id])
+  oferta      Oferta   @relation(fields: [ofertaId], references: [id])
+}
+
+// ─── MATERIAŁY EDUKACYJNE ───────────────────────────────────────────────────
+
+model Material {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  tytul     String
+  opis      String?
+  typ       String   // pdf | wideo | artykul
+  url       String
+  kolejnosc Int      @default(0)
+  aktywny   Boolean  @default(true)
+  kategoria String   // prawo | windykacja | opcje_wyjscia | inne
+
+  dostepy   ZgloszenieUcesMaterialu[]
+}
+
+model ZgloszenieUcesMaterialu {
+  id           String   @id @default(cuid())
+  zgloszenieId String
+  materialId   String
+  odblokowano  DateTime @default(now())
+
+  zgloszenie   Zgloszenie @relation(fields: [zgloszenieId], references: [id])
+  material     Material   @relation(fields: [materialId], references: [id])
+
+  @@unique([zgloszenieId, materialId])
+}
+
+// ─── ADMIN ──────────────────────────────────────────────────────────────────
+
+model Admin {
+  id                String   @id @default(cuid())
+  createdAt         DateTime @default(now())
+  email             String   @unique
+  passwordHash      String
+  imie              String
+  rola              String   @default("moderator")  // superadmin | moderator
+  aktywny           Boolean  @default(true)
+  ostatnieLogowanie DateTime?
+}
+
+// ─── LOGI BEZPIECZEŃSTWA ────────────────────────────────────────────────────
+
+model LogBezpieczenstwa {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  typ       String   // login_fail | rate_limit | suspicious | payment
+  ip        String?
+  email     String?
+  userAgent String?
+  szczegoly String?
+}

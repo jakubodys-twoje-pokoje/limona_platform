@@ -1,0 +1,28 @@
+{
+  "name": "limona-platform",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "concurrently \"npm run dev --workspace=apps/dluznik\" \"npm run dev --workspace=apps/inwestor\" \"npm run dev --workspace=apps/admin\"",
+    "build": "npm run build --workspaces",
+    "lint": "npm run lint --workspaces",
+    "db:generate": "prisma generate",
+    "db:push": "prisma db push",
+    "db:seed": "ts-node --compiler-options '{\"module\":\"CommonJS\"}' prisma/seed.ts",
+    "db:migrate": "prisma migrate dev"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2",
+    "typescript": "^5.3.3",
+    "ts-node": "^10.9.2",
+    "@types/node": "^20.11.5",
+    "prisma": "^5.8.1"
+  },
+  "dependencies": {
+    "@prisma/client": "^5.8.1"
+  }
+}
