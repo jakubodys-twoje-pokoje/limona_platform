@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { prisma } from '@limona/db';
 import { authOptions } from '@/lib/auth';
+import { AdminSidebar } from '@/components/AdminSidebar';
 
 export default async function UstawieniaPage() {
   const session = await getServerSession(authOptions);
@@ -15,39 +16,12 @@ export default async function UstawieniaPage() {
 
   return (
     <div className="min-h-screen bg-[#F8F6F1] flex">
-      <aside className="w-56 min-h-screen bg-[#1C1C1C] text-white fixed top-0 left-0 z-40">
-        <div className="p-5 border-b border-white/10">
-          <p className="font-bold text-[#4A6741] text-lg">Limona Admin</p>
-          <p className="text-[#9B9B9B] text-xs mt-0.5">{session.user.imie}</p>
-        </div>
-        <nav className="p-4 space-y-1">
-          {[
-            { href: '/dashboard', label: 'Dashboard', icon: '📊' },
-            { href: '/zgloszenia', label: 'Zgłoszenia', icon: '📋' },
-            { href: '/inwestorzy', label: 'Inwestorzy', icon: '👥' },
-            { href: '/oferty', label: 'Oferty', icon: '🏠' },
-            { href: '/materialy', label: 'Materiały', icon: '📚' },
-            { href: '/platnosci', label: 'Płatności', icon: '💳' },
-            { href: '/ustawienia', label: 'Ustawienia', icon: '⚙️' },
-          ].map((item) => (
-            <Link key={item.href} href={item.href}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${item.href === '/ustawienia' ? 'bg-[#4A6741] text-white' : 'hover:bg-white/10'}`}>
-              <span>{item.icon}</span><span>{item.label}</span>
-            </Link>
-          ))}
-          <div className="pt-4 border-t border-white/10">
-            <Link href="/api/auth/signout" className="flex items-center gap-3 px-3 py-2.5 text-sm text-[#9B9B9B] hover:bg-white/10 rounded-lg">
-              <span>🚪</span><span>Wyloguj</span>
-            </Link>
-          </div>
-        </nav>
-      </aside>
+      <AdminSidebar active="ustawienia" adminImie={session.user.imie} />
 
       <main className="ml-56 flex-1 p-8">
         <h1 className="text-2xl font-bold text-[#1C1C1C] mb-8">Ustawienia</h1>
 
         <div className="grid md:grid-cols-2 gap-6 mb-8">
-          {/* Quick links */}
           <Link href="/ustawienia/logi"
             className="bg-white border border-[#D8D8D8] rounded-xl p-6 hover:border-[#4A6741] transition-colors flex items-center gap-4">
             <span className="text-3xl">🔒</span>
@@ -58,7 +32,6 @@ export default async function UstawieniaPage() {
           </Link>
         </div>
 
-        {/* Admins */}
         {session.user.rola === 'superadmin' && (
           <>
             <h2 className="text-lg font-semibold text-[#1C1C1C] mb-4">Konta administratorów</h2>

@@ -184,6 +184,26 @@ model Admin {
   rola              String   @default("moderator")  // superadmin | moderator
   aktywny           Boolean  @default(true)
   ostatnieLogowanie DateTime?
+
+  wyszukiwania      WyszukiwanieKontaktu[]
+}
+
+// ─── WYSZUKIWARKA KONTAKTÓW ─────────────────────────────────────────────────
+
+model WyszukiwanieKontaktu {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+
+  imie      String
+  nazwisko  String
+  nip       String?
+  krs       String?
+
+  wyniki    Json?    // raw aggregated results
+  notatki   String?
+
+  adminId   String?
+  admin     Admin?   @relation(fields: [adminId], references: [id])
 }
 
 // ─── LOGI BEZPIECZEŃSTWA ────────────────────────────────────────────────────
