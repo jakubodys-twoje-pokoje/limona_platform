@@ -12,7 +12,7 @@ interface SearchResult {
 interface Wyniki {
   ceidg: SearchResult;
   krs: SearchResult;
-  bing: SearchResult;
+  google: SearchResult;
   rejestr_io: SearchResult;
 }
 
@@ -32,7 +32,7 @@ function SourceBadge({ source }: { source: string }) {
   const colors: Record<string, string> = {
     ceidg: 'bg-blue-100 text-blue-700',
     krs: 'bg-purple-100 text-purple-700',
-    bing: 'bg-orange-100 text-orange-700',
+    google: 'bg-orange-100 text-orange-700',
     rejestr_io: 'bg-[#E8F0E4] text-[#4A6741]',
   };
   return (
@@ -273,7 +273,7 @@ export function WyszukiwarkaClient() {
             className="bg-[#4A6741] text-white px-6 py-2.5 rounded-lg text-sm font-semibold hover:bg-[#6B8F5E] transition-colors disabled:opacity-60 disabled:cursor-not-allowed">
             {loading ? 'Wyszukuję…' : '🔍 Szukaj'}
           </button>
-          <p className="text-xs text-[#9B9B9B]">Przeszukuje CEIDG, KRS, Bing i rejestr.io jednocześnie</p>
+          <p className="text-xs text-[#9B9B9B]">Przeszukuje CEIDG, KRS, Google i rejestr.io jednocześnie</p>
         </div>
       </form>
 
@@ -298,7 +298,7 @@ export function WyszukiwarkaClient() {
 
           <ResultSection title="CEIDG — działalność gospodarcza" sourceKey="ceidg" data={wyniki.ceidg} />
           <ResultSection title="KRS — spółki i organizacje" sourceKey="krs" data={wyniki.krs} />
-          <ResultSection title="Bing — wyniki webowe" sourceKey="bing" data={wyniki.bing} />
+          <ResultSection title="Google — wyniki webowe" sourceKey="google" data={wyniki.google} />
           <ResultSection title="rejestr.io — zagregowane dane" sourceKey="rejestr_io" data={wyniki.rejestr_io} />
         </div>
       )}

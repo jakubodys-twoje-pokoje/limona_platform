@@ -36,9 +36,9 @@ interface KrsEntry {
   representants?: Array<{ imieNazwisko?: string; rola?: string }>;
 }
 
-interface BingWebPage {
-  name?: string;
-  url?: string;
+interface GoogleSearchItem {
+  title?: string;
+  link?: string;
   snippet?: string;
 }
 
@@ -108,28 +108,30 @@ async function searchKrs(phrase: string, krs?: string) {
   }
 }
 
-async function searchBing(query: string) {
-  const key = process.env.BING_SEARCH_API_KEY;
-  if (!key) return { source: 'bing', skipped: true, results: [] };
+async function searchGoogle(query: string) {
+  const key = process.env.GOOGLE_CSE_API_KEY;
+  const cx = process.env.GOOGLE_CSE_ID;
+  if (!key || !cx) return { source: 'google', skipped: true, results: [] };
 
   try {
+    const params = new URLSearchParams({ key, cx, q: query, num: '10', lr: 'lang_pl' });
     const res = await fetch(
-      `https://api.bing.microsoft.com/v7.0/search?q=${encodeURIComponent(query)}&count=10&mkt=pl-PL`,
-      { headers: { 'Ocp-Apim-Subscription-Key': key }, signal: AbortSignal.timeout(6000) }
+      `https://www.googleapis.com/customsearch/v1?${params}`,
+      { signal: AbortSignal.timeout(6000) }
     );
-    if (!res.ok) return { source: 'bing', error: `HTTP ${res.status}`, results: [] };
+    if (!res.ok) return { source: 'google', error: `HTTP ${res.status}`, results: [] };
 
     const data = await res.json();
     return {
-      source: 'bing',
-      results: (data.webPages?.value ?? []).map((p: BingWebPage) => ({
-        title: p.name,
-        url: p.url,
+      source: 'google',
+      results: (data.items ?? []).map((p: GoogleSearchItem) => ({
+        title: p.title,
+        url: p.link,
         snippet: p.snippet,
       })),
     };
   } catch (err) {
-    return { source: 'bing', error: String(err), results: [] };
+    return { source: 'google', error: String(err), results: [] };
   }
 }
 
@@ -167,17 +169,17 @@ export async function POST(req: NextRequest) {
   const { imie, nazwisko, nip, krs } = parsed.data;
   const fullName = `${imie} ${nazwisko}`;
 
-  const [ceidg, krsResult, bing, rejestrio] = await Promise.allSettled([
+  const [ceidg, krsResult, google, rejestrio] = await Promise.allSettled([
     searchCeidg(imie, nazwisko, nip),
     searchKrs(nip ?? krs ?? fullName, krs),
-    searchBing(`${fullName} kontakt telefon email`),
+    searchGoogle(`${fullName} kontakt telefon email`),
     searchRejestrio(nip, krs, fullName),
   ]);
 
   const wyniki = {
     ceidg: ceidg.status === 'fulfilled' ? ceidg.value : { source: 'ceidg', error: 'promise rejected', results: [] },
     krs: krsResult.status === 'fulfilled' ? krsResult.value : { source: 'krs', error: 'promise rejected', results: [] },
-    bing: bing.status === 'fulfilled' ? bing.value : { source: 'bing', error: 'promise rejected', results: [] },
+    google: google.status === 'fulfilled' ? google.value : { source: 'google', error: 'promise rejected', results: [] },
     rejestr_io: rejestrio.status === 'fulfilled' ? rejestrio.value : { source: 'rejestr_io', error: 'promise rejected', results: [] },
   };
 
